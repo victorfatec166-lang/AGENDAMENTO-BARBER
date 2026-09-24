@@ -15,6 +15,7 @@ def criar_agendamento(
     db: Session = Depends(get_db),
     utilizador_atual = Depends(obter_utilizador_atual)
 ):
+    
     # 1. Verificar se o cliente existe
     cliente_existe = db.query(Cliente).filter(Cliente.id == agendamento.cliente_id).first()
     if not cliente_existe:
@@ -52,3 +53,11 @@ def criar_agendamento(
     db.refresh(novo_agendamento)
     
     return novo_agendamento
+# Cole a função GET exatamente aqui abaixo:
+@router.get("/", response_model=list[AgendamentoResponse])
+def listar_agendamentos(
+    db: Session = Depends(get_db),
+    utilizador_atual = Depends(obter_utilizador_atual)
+):
+    agendamentos = db.query(Agendamento).all()
+    return agendamentos
