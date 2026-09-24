@@ -1,62 +1,54 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import timedelta
 from config.database import get_db
-from models.agendamento import AgendamentoModel
-from models.cliente import ClienteModel
-from models.servico import ServicoModel
-from models.usuario import UsuarioModel
+from models.agendamento import AgendamentoModel as Agendamento
+from models.cliente import ClienteModel as Cliente        # <- Com alias
+from models.servico import ServicoModel as Servico        # <- Com alias
 from schemas.agendamento_schema import AgendamentoCreate, AgendamentoResponse
-from utils.dependencies import obter_utilizador_atual  # <- Importação da segurança
+from utils.dependencies import obter_utilizador_atual
 
 router = APIRouter(prefix="/agendamentos", tags=["Agendamentos"])
 
-@router.post("/", response_model=AgendamentoResponse)
+@router.post("/", response_model=AgendamentoResponse, status_code=status.HTTP_201_CREATED)
 def criar_agendamento(
-    agendamento: AgendamentoCreate, 
+    agendamento: AgendamentoCreate,
     db: Session = Depends(get_db),
-    utilizador_atual: UsuarioModel = Depends(obter_utilizador_atual) # <- Rota protegida!
+    utilizador_atual = Depends(obter_utilizador_atual)
 ):
-    # 1. Verifica se o cliente existe
-    cliente = db.query(ClienteModel).filter(ClienteModel.id == agendamento.cliente_id).first()
-    if not cliente:
-        raise HTTPException(status_code=404, detail="Cliente não encontrado!")
-    
-    # 2. Verifica se o serviço existe e obtém a sua duração
-    servico = db.query(ServicoModel).filter(ServicoModel.id == agendamento.servico_id).first()
-    if not servico:
-        raise HTTPException(status_code=404, detail="Serviço não encontrado!")
+    # 1. Verificar se o cliente existe
+    cliente_existe = db.query(Cliente).filter(Cliente.id == agendamento.cliente_id).first()
+    if not cliente_existe:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="O cliente especificado não foi encontrado."
+        )
 
-    # 3. Validação de Conflito de Horário
-    inicio_novo = agendamento.data_hora
-    fim_novo = inicio_novo + timedelta(minutes=servico.duracao_minutos)
+    # 2. Verificar se o serviço existe
+    servico_existe = db.query(Servico).filter(Servico.id == agendamento.servico_id).first()
+    if not servico_existe:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="O serviço especificado não foi encontrado."
+        )
 
-    agendamentos_existentes = db.query(AgendamentoModel).all()
-    
-    for ag in agendamentos_existentes:
-        servico_existente = db.query(ServicoModel).filter(ServicoModel.id == ag.servico_id).first()
-        inicio_existente = ag.data_hora
-        fim_existente = inicio_existente + timedelta(minutes=servico_existente.duracao_minutos)
+    # 3. Verificar se já existe um agendamento exatamente para a mesma data e hora
+    conflito = db.query(Agendamento).filter(Agendamento.data_hora == agendamento.data_hora).first()
+    if conflito:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Já existe um agendamento marcado para este horário."
+        )
 
-        if inicio_novo < fim_existente and fim_novo > inicio_existente:
-            raise HTTPException(
-                status_code=400, 
-                detail="Horário indisponível! Já existe um agendamento neste intervalo."
-            )
-
-    # 4. Cria o agendamento associado ao utilizador autenticado (opcional, se quiser guardar quem criou)
-    novo_agendamento = AgendamentoModel(
+    # 4. Criar o novo agendamento se todas as validações passarem
+    novo_agendamento = Agendamento(
         cliente_id=agendamento.cliente_id,
         servico_id=agendamento.servico_id,
         data_hora=agendamento.data_hora,
-        status="confirmado"
+        status="Confirmado"
     )
+    
     db.add(novo_agendamento)
     db.commit()
     db.refresh(novo_agendamento)
+    
     return novo_agendamento
-
-@router.get("/", response_model=list[AgendamentoResponse])
-def listar_agendamentos(db: Session = Depends(get_db)):
-    agendamentos = db.query(AgendamentoModel).all()
-    return agendamentos
