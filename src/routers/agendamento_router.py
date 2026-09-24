@@ -61,3 +61,50 @@ def listar_agendamentos(
 ):
     agendamentos = db.query(Agendamento).all()
     return agendamentos
+
+@router.delete("/{agendamento_id}", status_code=status.HTTP_204_NO_CONTENT)
+def deletar_agendamento(
+    agendamento_id: int,
+    db: Session = Depends(get_db),
+    utilizador_atual = Depends(obter_utilizador_atual)
+):
+    # 1. Procurar o agendamento pelo ID
+    agendamento = db.query(Agendamento).filter(Agendamento.id == agendamento_id).first()
+    
+    # 2. Se não existir, retornar erro 404
+    if not agendamento:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="O agendamento especificado não foi encontrado."
+        )
+    
+    # 3. Apagar o registo da base de dados
+    db.delete(agendamento)
+    db.commit()
+    
+    return None
+
+@router.put("/{agendamento_id}", response_model=AgendamentoResponse)
+def atualizar_agendamento(
+    agendamento_id: int,
+    agendamento_dados: AgendamentoCreate,
+    db: Session = Depends(get_db),
+    utilizador_atual = Depends(obter_utilizador_atual)
+):
+    # 1. Procurar o agendamento pelo ID
+    agendamento = db.query(Agendamento).filter(Agendamento.id == agendamento_id).first()
+    if not agendamento:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="O agendamento especificado não foi encontrado."
+        )
+    
+    # 2. Atualizar os dados do agendamento
+    agendamento.cliente_id = agendamento_dados.cliente_id
+    agendamento.servico_id = agendamento_dados.servico_id
+    agendamento.data_hora = agendamento_dados.data_hora
+    
+    db.commit()
+    db.refresh(agendamento)
+    
+    return agendamento
