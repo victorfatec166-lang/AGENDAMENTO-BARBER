@@ -1,0 +1,45 @@
+/* Estilos globais e customização Sovereign Barber */
+:root {
+    --bg-onyx: #0B0B0C;
+    --card-onyx: #141416;
+    --gold-champagne: #D4AF37;
+    --border-color: #27272A;
+}
+
+body {
+    background-color: var(--bg-onyx);
+    color: #F9FAFB;
+}
+
+/* Transições suaves para a navegação por abas */
+.secao-conteudo {
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Estilo ativo para os links do menu lateral */
+.active-tab {
+    background-color: rgba(212, 175, 55, 0.1);
+    color: #D4AF37;
+    border-left: 3px solid #D4AF37;
+}
+
+/* Scrollbar personalizada em tom dourado subtil */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: #0B0B0C;
+}
+::-webkit-scrollbar-thumb {
+    background: #27272A;
+    border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #D4AF37;
+}

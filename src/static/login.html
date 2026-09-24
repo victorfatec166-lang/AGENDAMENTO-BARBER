@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sovereign Barber | Autenticação</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Estilo Compartilhado -->
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="bg-[#0B0B0C] text-[#F9FAFB] font-sans antialiased min-h-screen flex items-center justify-center p-4">
+
+    <!-- Caixa de Login / Container Principal -->
+    <div class="w-full max-w-md bg-[#141416] border border-[#27272A] rounded-3xl p-8 shadow-2xl relative overflow-hidden">
+        
+        <!-- Detalhe decorativo de luz dourada subtil no topo -->
+        <div class="absolute -top-24 -left-24 w-48 h-48 bg-[#D4AF37]/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <!-- Logo e Cabeçalho -->
+        <div class="text-center space-y-3 mb-8">
+            <div class="w-14 h-14 rounded-2xl bg-[#D4AF37] flex items-center justify-center text-[#0B0B0C] font-bold text-2xl mx-auto shadow-lg shadow-[#D4AF37]/20">
+                <i class="fa-solid fa-scissors"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-xl tracking-wider text-white">SOVEREIGN</h1>
+                <p class="text-xs text-[#D4AF37] uppercase tracking-widest mt-1">Barber Studio Management</p>
+            </div>
+        </div>
+
+        <!-- Formulário de Login -->
+        <form onsubmit="realizarLogin(event)" class="space-y-5">
+            <div>
+                <label class="block text-xs font-semibold text-gray-400 uppercase mb-2">E-mail Profissional</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
+                        <i class="fa-regular fa-envelope"></i>
+                    </span>
+                    <input type="email" id="login-email" value="admin@sovereign.com" required 
+                        class="w-full bg-[#0B0B0C] border border-[#27272A] rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#D4AF37] transition">
+                </div>
+            </div>
+
+            <div>
+                <div class="flex justify-between items-center mb-2">
+                    <label class="block text-xs font-semibold text-gray-400 uppercase">Palavra-passe</label>
+                </div>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-500">
+                        <i class="fa-regular fa-lock"></i>
+                    </span>
+                    <input type="password" id="login-password" value="123456" required 
+                        class="w-full bg-[#0B0B0C] border border-[#27272A] rounded-xl pl-11 pr-4 py-3 text-sm focus:outline-none focus:border-[#D4AF37] transition">
+                </div>
+            </div>
+
+            <button type="submit" class="w-full bg-[#D4AF37] text-[#0B0B0C] font-bold py-3 rounded-xl hover:bg-[#e5c558] transition shadow-lg shadow-[#D4AF37]/10 mt-2">
+                Aceder ao Sistema
+            </button>
+        </form>
+
+        <!-- Rodapé do Card -->
+        <div class="mt-8 text-center border-t border-[#27272A] pt-4">
+            <p class="text-xs text-gray-500">Acesso restrito a administradores autorizados.</p>
+        </div>
+    </div>
+
+    <!-- Script de Autenticação -->
+    <script>
+        function realizarLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+
+            if (email === "admin@sovereign.com" && password === "123456") {
+                localStorage.setItem('sovereign_autenticado', 'true');
+                
+                const btn = e.target.querySelector('button[type="submit"]');
+                btn.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> A entrar...';
+                
+                setTimeout(() => {
+                    window.location.href = '/static/index.html';
+                }, 500);
+            } else {
+                alert('Credenciais inválidas. Utilize admin@sovereign.com / 123456');
+            }
+        }
+    </script>
+</body>
+</html>
