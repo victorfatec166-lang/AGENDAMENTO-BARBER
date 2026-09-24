@@ -1,0 +1,8 @@
+# Ambiente virtual
+venv/
+__pycache__/
+
+# Ficheiros de configuração sensíveis e bases de dados locais
+.env
+banco.db
+*.db
