@@ -1,39 +1,33 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
-from config.database import get_db
-from models.usuario import UsuarioModel
-from schemas.usuario_schema import UsuarioCreate, UsuarioResponse
-from utils.security import obter_senha_hash, verificar_senha, criar_token_acesso
+from pydantic import BaseModel, EmailStr
 
-router = APIRouter(tags=["Autenticação"])
+from src.config.database import get_db
+from src.models.usuario import UsuarioModel
+from src.utils.security import verificar_senha, criar_token_acesso
 
-@router.post("/signup", response_model=UsuarioResponse)
-def registar_utilizador(usuario: UsuarioCreate, db: Session = Depends(get_db)):
-    usuario_existente = db.query(UsuarioModel).filter(UsuarioModel.email == usuario.email).first()
-    if usuario_existente:
-        raise HTTPException(status_code=400, detail="Este e-mail já está registado!")
-    
-    senha_hash = obter_senha_hash(usuario.senha)
-    novo_utilizador = UsuarioModel(
-        email=usuario.email,
-        senha_hash=senha_hash,
-        tipo=usuario.tipo
-    )
-    db.add(novo_utilizador)
-    db.commit()
-    db.refresh(novo_utilizador)
-    return novo_utilizador
+router = APIRouter(prefix="/api/auth", tags=["Autenticação"])
+
+class LoginSchema(BaseModel):
+    email: EmailStr
+    senha: str
 
 @router.post("/login")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    usuario = db.query(UsuarioModel).filter(UsuarioModel.email == form_data.username).first()
-    if not usuario or not verificar_senha(form_data.password, usuario.senha_hash):
+def login(dados: LoginSchema, db: Session = Depends(get_db)):
+    # Procura o utilizador pelo e-mail na base de dados
+    usuario = db.query(UsuarioModel).filter(UsuarioModel.email == dados.email).first()
+    
+    # Valida se o utilizador existe e se a senha está correta
+    if not usuario or not verificar_senha(dados.senha, usuario.senha_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="E-mail ou palavra-passe incorretos",
-            headers={"WWW-Authenticate": "Bearer"},
+            detail="E-mail ou palavra-passe incorretos."
         )
     
-    access_token = criar_token_acesso(data={"sub": usuario.email, "tipo": usuario.tipo})
-    return {"access_token": access_token, "token_type": "bearer"}
+    # Gera o token JWT de acesso
+    access_token = criar_token_acesso(data={"sub": usuario.email})
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer"
+    }

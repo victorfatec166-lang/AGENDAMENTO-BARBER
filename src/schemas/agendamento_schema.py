@@ -1,16 +1,15 @@
 from pydantic import BaseModel
-from datetime import datetime
 
 class AgendamentoCreate(BaseModel):
     cliente_id: int
     servico_id: int
-    data_hora: datetime
+    data_hora: str
 
 class AgendamentoResponse(BaseModel):
     id: int
     cliente_id: int
     servico_id: int
-    data_hora: datetime
+    data_hora: str
     status: str
 
     class Config:

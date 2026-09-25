@@ -1,24 +1,35 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from config.database import get_db
-from models.servico import ServicoModel
-from schemas.servico_schema import ServicoCreate, ServicoResponse
+from typing import List
+from pydantic import BaseModel
 
-router = APIRouter(prefix="/servicos", tags=["Serviços"])
+from src.config.database import SessionLocal
+from src.models.servico import ServicoModel
 
-@router.post("/", response_model=ServicoResponse)
-def criar_servico(servico: ServicoCreate, db: Session = Depends(get_db)):
-    novo_servico = ServicoModel(
-        nome=servico.nome,
-        preco=servico.preco,
-        duracao_minutos=servico.duracao_minutos
-    )
-    db.add(novo_servico)
-    db.commit()
-    db.refresh(novo_servico)
-    return novo_servico
+router = APIRouter(prefix="/api/servicos", tags=["Serviços"])
 
-@router.get("/", response_model=list[ServicoResponse])
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+class ServicoCreate(BaseModel):
+    nome: str
+    descricao: str = None
+    preco: float
+    duracao_minutos: int = 30
+
+@router.get("/", response_model=List[dict])
 def listar_servicos(db: Session = Depends(get_db)):
     servicos = db.query(ServicoModel).all()
-    return servicos
+    return [{"id": s.id, "nome": s.nome, "descricao": s.descricao, "preco": s.preco, "duracao_minutos": s.duracao_minutos} for s in servicos]
+
+@router.post("/", status_code=201)
+def criar_servico(servico: ServicoCreate, db: Session = Depends(get_db)):
+    novo = ServicoModel(**servico.dict())
+    db.add(novo)
+    db.commit()
+    db.refresh(novo)
+    return {"mensagem": "Serviço criado com sucesso!", "id": novo.id}

@@ -1,10 +1,10 @@
-from sqlalchemy import Column, Integer, String
-from config.database import Base
+from sqlalchemy import Column, Integer, String, Boolean
+from src.config.database import Base
 
 class UsuarioModel(Base):
     __tablename__ = "usuarios"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     email = Column(String, unique=True, index=True, nullable=False)
     senha_hash = Column(String, nullable=False)
-    tipo = Column(String, default="cliente") # Ex: "admin" ou "cliente"
+    is_admin = Column(Boolean, default=True)
